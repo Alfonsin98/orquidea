@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>OrquiML - Inteligencia de Orquídeas</title>
+
+    <!-- Configuración PWA para iOS (Apple) y Android -->
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#1E6B52" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="OrquiML" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="./icon.png" />
+
+    <style>
+      /* Reset y configuración táctil para iPhone y Android */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #F5F7F4;
+        color: #16241E;
+        overflow-x: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
+    <script>
+      // Registrar el Service Worker offline con ruta relativa para soportar GitHub Pages
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js', { scope: './' }).catch((err) => {
+            console.log('Error registrando ServiceWorker:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
+

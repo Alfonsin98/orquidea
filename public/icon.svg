@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1E6B52" />
+      <stop offset="100%" stop-color="#134937" />
+    </linearGradient>
+    <linearGradient id="petal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F4E6F4" />
+      <stop offset="60%" stop-color="#C26DC0" />
+      <stop offset="100%" stop-color="#8B3D88" />
+    </linearGradient>
+    <linearGradient id="lip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FACC15" />
+      <stop offset="100%" stop-color="#8B3D88" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <!-- Sépalo dorsal superior -->
+  <path d="M 256 90 C 220 120, 220 190, 256 240 C 292 190, 292 120, 256 90 Z" fill="url(#petal)" opacity="0.95" />
+  <!-- Sépalos laterales inferiores -->
+  <path d="M 256 240 C 180 250, 140 330, 180 390 C 230 380, 246 310, 256 240 Z" fill="url(#petal)" opacity="0.9" />
+  <path d="M 256 240 C 332 250, 372 330, 332 390 C 282 380, 266 310, 256 240 Z" fill="url(#petal)" opacity="0.9" />
+  <!-- Pétalos laterales anchos (alas de mariposa) -->
+  <path d="M 256 240 C 180 150, 80 190, 110 270 C 150 320, 220 270, 256 240 Z" fill="url(#petal)" />
+  <path d="M 256 240 C 332 150, 432 190, 402 270 C 362 320, 292 270, 256 240 Z" fill="url(#petal)" />
+  <!-- Labio central (labelo) con motas y tonos orquídea -->
+  <path d="M 256 230 C 236 260, 220 310, 256 345 C 292 310, 276 260, 256 230 Z" fill="url(#lip)" />
+  <circle cx="256" cy="245" r="14" fill="#FEF08A" />
+  <circle cx="256" cy="275" r="5" fill="#581C87" />
+  <circle cx="248" cy="290" r="4" fill="#581C87" />
+  <circle cx="264" cy="290" r="4" fill="#581C87" />
+</svg>
+

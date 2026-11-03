@@ -1,17 +1,26 @@
 {
   "expo": {
-    "name": "orquidea",
+    "name": "OrquiML",
     "slug": "orquidea",
+    "scheme": "orquidea",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.orquiml.tracker"
     },
     "android": {
+      "package": "com.orquiml.tracker",
+      "permissions": [
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#D8EDE4",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -19,7 +28,23 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-sharing",
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "OrquiML accede a tu galería para registrar fotos del avance de tus orquídeas y analizarlas localmente.",
+          "cameraPermission": "OrquiML utiliza la cámara para fotografiar hojas, raíces y floraciones de tus orquídeas.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-font"
+    ]
   }
 }
