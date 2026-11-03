@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { X, Camera, Save } from 'lucide-react';
 import { GrowthStage, LightLevel, Orchid, OrchidGenus, SubstrateType, VentilationLevel } from '../../types/orchid';
 import { GROWTH_STAGE_LABELS, LIGHT_LABELS, SUBSTRATE_RETENTION_FACTOR } from '../../data/orchidCatalog';
+import { optimizeImageForWeb } from '../../ml/photoVisionWeb';
 
 interface Props {
   initialOrchid?: Orchid | null;
@@ -57,14 +58,25 @@ export const NewOrchidModal: React.FC<Props> = ({ initialOrchid, onClose, onSave
   const [coverPhotoUri, setCoverPhotoUri] = useState<string | null>(initialOrchid?.coverPhotoUri || null);
   const [notes, setNotes] = useState(initialOrchid?.notes || '');
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [optimizingPhoto, setOptimizingPhoto] = useState(false);
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setCoverPhotoUri(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        setOptimizingPhoto(true);
+        const optimized = await optimizeImageForWeb(file, 1600, 0.88);
+        setCoverPhotoUri(optimized);
+      } catch (err) {
+        console.error('Error optimizando foto de portada:', err);
+        const reader = new FileReader();
+        reader.onload = () => {
+          setCoverPhotoUri(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setOptimizingPhoto(false);
+      }
     }
   };
 
@@ -131,7 +143,11 @@ export const NewOrchidModal: React.FC<Props> = ({ initialOrchid, onClose, onSave
                 flexShrink: 0,
               }}
             >
-              {coverPhotoUri ? (
+              {optimizingPhoto ? (
+                <span style={{ fontSize: 9, color: 'var(--color-primary)', fontWeight: 600, textAlign: 'center', padding: 4 }}>
+                  Procesando HD...
+                </span>
+              ) : coverPhotoUri ? (
                 <img src={coverPhotoUri} alt="Portada" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <>

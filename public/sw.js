@@ -1,4 +1,4 @@
-const CACHE_NAME = 'orquiml-v2';
+const CACHE_NAME = 'orquiml-v3';
 
 const PRECACHE_ASSETS = [
   './',

@@ -12,6 +12,8 @@ import {
   Sparkles,
   Beaker,
   ZoomIn,
+  ZoomOut,
+  RotateCcw,
 } from 'lucide-react';
 import { CareLog, Orchid, OrchidMLPrediction, TipFeedbackValue } from '../../types/orchid';
 import {
@@ -53,7 +55,72 @@ export const OrchidDetailModal: React.FC<Props> = ({
   const [activeTab, setActiveTab] = useState<DetailTab>('photos');
   const [photoFilter, setPhotoFilter] = useState<'all' | 'raices' | 'hojas'>('all');
   const [zoomedPhoto, setZoomedPhoto] = useState<{ uri: string; date: string; title: string } | null>(null);
+  const [zoomScale, setZoomScale] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showComparison, setShowComparison] = useState(false);
+
+  const handleOpenZoom = (photo: { uri: string; date: string; title: string }) => {
+    setZoomedPhoto(photo);
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  const handleZoomIn = () => {
+    setZoomScale((s) => Math.min(3.5, Number((s + 0.5).toFixed(1))));
+  };
+
+  const handleZoomOut = () => {
+    setZoomScale((s) => {
+      const next = Math.max(1, Number((s - 0.5).toFixed(1)));
+      if (next === 1) setPanOffset({ x: 0, y: 0 });
+      return next;
+    });
+  };
+
+  const handleResetZoom = () => {
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  const handleDoubleTap = () => {
+    setZoomScale((s) => {
+      if (s > 1) {
+        setPanOffset({ x: 0, y: 0 });
+        return 1;
+      }
+      return 2;
+    });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomScale <= 1) return;
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || zoomScale <= 1) return;
+    setPanOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (zoomScale <= 1 || e.touches.length !== 1) return;
+    setIsDragging(true);
+    const touch = e.touches[0];
+    setDragStart({ x: touch.clientX - panOffset.x, y: touch.clientY - panOffset.y });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || zoomScale <= 1) return;
+    const touch = e.touches[0];
+    setPanOffset({ x: touch.clientX - dragStart.x, y: touch.clientY - dragStart.y });
+  };
+
+  const handleTouchEnd = () => setIsDragging(false);
 
   const isWaterDue = prediction.daysUntilNextWatering <= 0;
   const isUrgent = prediction.daysUntilNextWatering <= -2;
@@ -114,6 +181,15 @@ export const OrchidDetailModal: React.FC<Props> = ({
             }}
           >
             <div
+              onClick={() => {
+                if (orchid.coverPhotoUri) {
+                  handleOpenZoom({
+                    uri: orchid.coverPhotoUri,
+                    date: new Date(orchid.createdAt).toLocaleDateString(),
+                    title: `${orchid.name} • Portada`,
+                  });
+                }
+              }}
               style={{
                 width: 70,
                 height: 70,
@@ -125,10 +201,30 @@ export const OrchidDetailModal: React.FC<Props> = ({
                 justifyContent: 'center',
                 flexShrink: 0,
                 border: '1px solid #D5E5DA',
+                position: 'relative',
+                cursor: orchid.coverPhotoUri ? 'pointer' : 'default',
               }}
+              title={orchid.coverPhotoUri ? 'Toca para ampliar foto de portada' : undefined}
             >
               {orchid.coverPhotoUri ? (
-                <img src={orchid.coverPhotoUri} alt={orchid.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <>
+                  <img src={orchid.coverPhotoUri} alt={orchid.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 3,
+                      right: 3,
+                      backgroundColor: 'rgba(0,0,0,0.65)',
+                      borderRadius: 6,
+                      padding: '2px 4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <ZoomIn size={10} color="#FFF" />
+                  </div>
+                </>
               ) : (
                 <Flower2 size={34} color="var(--color-primary)" />
               )}
@@ -394,9 +490,20 @@ export const OrchidDetailModal: React.FC<Props> = ({
                   </div>
                   <div className="form-row-2col">
                     {/* Foto más antigua */}
-                    <div style={{ backgroundColor: '#FFF', borderRadius: 12, padding: 8, border: '1px solid #E5EDE7' }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 4 }}>
-                        PRIMER REGISTRO: {new Date(earliestPhotoLog.recordedAt).toLocaleDateString()}
+                    <div
+                      style={{ backgroundColor: '#FFF', borderRadius: 12, padding: 8, border: '1px solid #E5EDE7', cursor: 'pointer' }}
+                      onClick={() =>
+                        handleOpenZoom({
+                          uri: earliestPhotoLog.photoUri!,
+                          date: new Date(earliestPhotoLog.recordedAt).toLocaleDateString(),
+                          title: `${orchid.name} • Primer Registro`,
+                        })
+                      }
+                      title="Toca para ampliar foto"
+                    >
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>PRIMER REGISTRO: {new Date(earliestPhotoLog.recordedAt).toLocaleDateString()}</span>
+                        <ZoomIn size={12} color="var(--color-primary)" />
                       </div>
                       <img
                         src={earliestPhotoLog.photoUri!}
@@ -412,9 +519,20 @@ export const OrchidDetailModal: React.FC<Props> = ({
                     </div>
 
                     {/* Foto más reciente */}
-                    <div style={{ backgroundColor: '#FFF', borderRadius: 12, padding: 8, border: '1px solid #E5EDE7' }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary-dark)', marginBottom: 4 }}>
-                        REGISTRO ACTUAL: {new Date(latestPhotoLog.recordedAt).toLocaleDateString()}
+                    <div
+                      style={{ backgroundColor: '#FFF', borderRadius: 12, padding: 8, border: '1px solid #E5EDE7', cursor: 'pointer' }}
+                      onClick={() =>
+                        handleOpenZoom({
+                          uri: latestPhotoLog.photoUri!,
+                          date: new Date(latestPhotoLog.recordedAt).toLocaleDateString(),
+                          title: `${orchid.name} • Registro Actual`,
+                        })
+                      }
+                      title="Toca para ampliar foto"
+                    >
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary-dark)', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>REGISTRO ACTUAL: {new Date(latestPhotoLog.recordedAt).toLocaleDateString()}</span>
+                        <ZoomIn size={12} color="var(--color-primary)" />
                       </div>
                       <img
                         src={latestPhotoLog.photoUri!}
@@ -481,7 +599,7 @@ export const OrchidDetailModal: React.FC<Props> = ({
                             cursor: 'pointer',
                           }}
                           onClick={() =>
-                            setZoomedPhoto({
+                            handleOpenZoom({
                               uri: log.photoUri!,
                               date: logDate.toLocaleDateString(),
                               title: `${orchid.name} (${targetLabel})`,
@@ -758,7 +876,7 @@ export const OrchidDetailModal: React.FC<Props> = ({
             </div>
           )}
 
-          {/* Modal de Zoom de Foto a Pantalla Completa */}
+          {/* Modal de Zoom de Foto a Pantalla Completa con Controles Interactivos */}
           {zoomedPhoto && (
             <div
               style={{
@@ -767,33 +885,218 @@ export const OrchidDetailModal: React.FC<Props> = ({
                 left: 0,
                 right: 0,
                 bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.92)',
+                backgroundColor: 'rgba(0,0,0,0.95)',
                 zIndex: 200,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
-                padding: 16,
+                justifyContent: 'space-between',
+                padding: '14px 14px 20px 14px',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                touchAction: zoomScale > 1 ? 'none' : 'auto',
               }}
-              onClick={() => setZoomedPhoto(null)}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             >
-              <div style={{ width: '100%', maxWidth: 700, display: 'flex', justifyContent: 'space-between', color: '#FFF', marginBottom: 10 }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{zoomedPhoto.title}</div>
-                  <div style={{ fontSize: 12, color: '#A0B4AA' }}>{zoomedPhoto.date}</div>
+              {/* Barra Superior con Título y Controles */}
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: 820,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  color: '#FFF',
+                  zIndex: 210,
+                  backgroundColor: 'rgba(20,28,24,0.85)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  padding: '10px 14px',
+                  borderRadius: 14,
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  gap: 12,
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#FFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {zoomedPhoto.title}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: '#A0B4AA' }}>{zoomedPhoto.date}</div>
                 </div>
-                <button
-                  onClick={() => setZoomedPhoto(null)}
-                  style={{ background: 'none', border: 'none', color: '#FFF', fontSize: 24, cursor: 'pointer' }}
-                >
-                  ✕
-                </button>
+
+                {/* Controles de Zoom */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleZoomOut();
+                    }}
+                    disabled={zoomScale <= 1}
+                    style={{
+                      background: 'rgba(255,255,255,0.15)',
+                      border: 'none',
+                      color: zoomScale <= 1 ? '#666' : '#FFF',
+                      borderRadius: 8,
+                      width: 32,
+                      height: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: zoomScale <= 1 ? 'default' : 'pointer',
+                    }}
+                    title="Alejar (-)"
+                  >
+                    <ZoomOut size={16} />
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleResetZoom();
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#4ADE80',
+                      minWidth: 42,
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      padding: '4px 6px',
+                    }}
+                    title="Click para restablecer 100%"
+                  >
+                    {Math.round(zoomScale * 100)}%
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleZoomIn();
+                    }}
+                    disabled={zoomScale >= 3.5}
+                    style={{
+                      background: 'rgba(255,255,255,0.15)',
+                      border: 'none',
+                      color: zoomScale >= 3.5 ? '#666' : '#FFF',
+                      borderRadius: 8,
+                      width: 32,
+                      height: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: zoomScale >= 3.5 ? 'default' : 'pointer',
+                    }}
+                    title="Acercar (+)"
+                  >
+                    <ZoomIn size={16} />
+                  </button>
+
+                  {zoomScale > 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleResetZoom();
+                      }}
+                      style={{
+                        background: 'rgba(255,255,255,0.15)',
+                        border: 'none',
+                        color: '#FFF',
+                        borderRadius: 8,
+                        padding: '6px 8px',
+                        fontSize: 11,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        cursor: 'pointer',
+                      }}
+                      title="Restablecer vista a 1x"
+                    >
+                      <RotateCcw size={12} />
+                      <span>1x</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setZoomedPhoto(null);
+                      handleResetZoom();
+                    }}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.25)',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      color: '#FFF',
+                      borderRadius: 8,
+                      width: 32,
+                      height: 32,
+                      fontSize: 16,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      marginLeft: 4,
+                    }}
+                    title="Cerrar visor"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
-              <img
-                src={zoomedPhoto.uri}
-                alt="Foto ampliada"
-                style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 12, objectFit: 'contain' }}
-              />
+
+              {/* Visor Central de la Imagen con Soporte de Arrastre y Doble Toque */}
+              <div
+                style={{
+                  flex: 1,
+                  width: '100%',
+                  maxWidth: 900,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  cursor: zoomScale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in',
+                }}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
+                onDoubleClick={handleDoubleTap}
+              >
+                <img
+                  src={zoomedPhoto.uri}
+                  alt={zoomedPhoto.title}
+                  draggable={false}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '75vh',
+                    borderRadius: 10,
+                    objectFit: 'contain',
+                    transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomScale})`,
+                    transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                    imageRendering: 'auto',
+                  }}
+                />
+              </div>
+
+              {/* Barra de Instrucciones Inferior */}
+              <div
+                style={{
+                  color: 'rgba(255,255,255,0.7)',
+                  fontSize: 11.5,
+                  textAlign: 'center',
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  zIndex: 210,
+                }}
+              >
+                {zoomScale > 1
+                  ? 'Arrastra para moverte • Doble toque para volver a 100%'
+                  : 'Doble toque o usa (+) para ampliar raíces y hojas con nitidez'}
+              </div>
             </div>
           )}
         </div>

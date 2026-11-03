@@ -87,6 +87,7 @@ export const NewCareLogModal: React.FC<Props> = ({
   const [photoMetrics, setPhotoMetrics] = useState<PhotoVisionMetrics | null>(null);
   const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
   const [rawFile, setRawFile] = useState<File | null>(null);
+  const [previewZoomed, setPreviewZoomed] = useState(false);
 
   // Notas generales
   const [notes, setNotes] = useState('');
@@ -401,8 +402,36 @@ export const NewCareLogModal: React.FC<Props> = ({
             )}
 
             {photoUri && (
-              <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)', backgroundColor: '#000' }}>
-                <img src={photoUri} alt="Vista previa" style={{ width: '100%', maxHeight: 220, objectFit: 'contain', display: 'block' }} />
+              <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)', backgroundColor: '#000', position: 'relative' }}>
+                <img
+                  src={photoUri}
+                  alt="Vista previa"
+                  style={{ width: '100%', maxHeight: 220, objectFit: 'contain', display: 'block', cursor: 'pointer' }}
+                  onClick={() => setPreviewZoomed(true)}
+                  title="Toca para ver en grande"
+                />
+                <button
+                  type="button"
+                  onClick={() => setPreviewZoomed(true)}
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    backgroundColor: 'rgba(0,0,0,0.65)',
+                    color: '#FFF',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '4px 8px',
+                    fontSize: 11,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Eye size={12} />
+                  <span>Ver grande</span>
+                </button>
                 {photoMetrics && (
                   <div style={{ padding: 10, backgroundColor: '#FAFDFB', borderTop: '1px solid #DFECE4', fontSize: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -701,6 +730,52 @@ export const NewCareLogModal: React.FC<Props> = ({
             <span>{saving ? 'Guardando...' : 'Guardar Registro'}</span>
           </button>
         </form>
+
+        {/* Modal de Vista Previa Grande */}
+        {previewZoomed && photoUri && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.95)',
+              zIndex: 300,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+            }}
+            onClick={() => setPreviewZoomed(false)}
+          >
+            <div style={{ width: '100%', maxWidth: 700, display: 'flex', justifyContent: 'space-between', color: '#FFF', marginBottom: 12 }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>Vista previa en Alta Definición</div>
+              <button
+                type="button"
+                onClick={() => setPreviewZoomed(false)}
+                style={{ background: 'none', border: 'none', color: '#FFF', fontSize: 24, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+            <img
+              src={photoUri}
+              alt="Vista previa grande"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '80vh',
+                borderRadius: 12,
+                objectFit: 'contain',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.7)',
+                imageRendering: 'auto',
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
