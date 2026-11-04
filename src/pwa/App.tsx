@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Flower2, Sparkles, Share, CheckCircle2, Brain, BookOpen, HardDriveDownload, Plus } from 'lucide-react';
+import { Flower2, Sparkles, Share, CheckCircle2, Brain, BookOpen, HardDriveDownload, Plus, RefreshCw } from 'lucide-react';
 import { BottomNav, TabKey } from './components/BottomNav';
 import { CollectionView } from './views/CollectionView';
 import { MLInsightsView } from './views/MLInsightsView';
@@ -51,6 +51,29 @@ export const App: React.FC = () => {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const [showIOSBanner, setShowIOSBanner] = useState(isIOS && !isStandalone);
+  const [updateReady, setUpdateReady] = useState(false);
+  const [refreshingApp, setRefreshingApp] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setUpdateReady(true);
+    window.addEventListener('orquiml-update-ready', handler);
+    return () => window.removeEventListener('orquiml-update-ready', handler);
+  }, []);
+
+  const handleForceReload = async () => {
+    setRefreshingApp(true);
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.update();
+        }
+      }
+    } catch (e) {
+      console.error('Error buscando actualizaciones:', e);
+    }
+    window.location.reload();
+  };
 
   const loadAllData = useCallback(async () => {
     try {
@@ -185,6 +208,25 @@ export const App: React.FC = () => {
             <span>OrquiML</span>
           </div>
           <span className="badge badge-primary">PWA Offline</span>
+          <button
+            onClick={handleForceReload}
+            title="Buscar actualizaciones y recargar"
+            style={{
+              background: '#FFF',
+              border: '1px solid var(--color-border)',
+              borderRadius: 8,
+              width: 30,
+              height: 30,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--color-primary-dark)',
+              marginLeft: 2,
+            }}
+          >
+            <RefreshCw size={14} style={{ animation: refreshingApp ? 'spin 1s linear infinite' : 'none' }} />
+          </button>
         </div>
 
         {/* Navegación para Pantallas Grandes (Tablet / Desktop) */}
@@ -233,6 +275,41 @@ export const App: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* Banner de Actualización Disponible */}
+      {updateReady && (
+        <div
+          style={{
+            backgroundColor: '#134937',
+            color: '#FFF',
+            padding: '10px 16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: '1px solid #4ADE80',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600 }}>
+            <Sparkles size={16} color="#4ADE80" />
+            <span>¡Nueva versión disponible (Fotos HD y Zoom)!</span>
+          </div>
+          <button
+            onClick={handleForceReload}
+            style={{
+              backgroundColor: '#4ADE80',
+              color: '#134937',
+              border: 'none',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            Actualizar ahora
+          </button>
+        </div>
+      )}
 
       {/* Banner sugerencia instalación iOS */}
       {showIOSBanner && (

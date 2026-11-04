@@ -41,6 +41,25 @@ export const SettingsView: React.FC<Props> = ({ onDataChanged, showToast }) => {
     }
   };
 
+  const handleCheckUpdates = async () => {
+    try {
+      setLoading(true);
+      showToast('Buscando última versión...');
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.update();
+        }
+      }
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (e: any) {
+      alert(`Error al actualizar: ${e.message}`);
+      setLoading(false);
+    }
+  };
+
   const handleReset = async () => {
     if (confirm('¿Deseas reiniciar la base de datos con las orquídeas y bitácoras botánicas de demostración?')) {
       try {
@@ -59,8 +78,26 @@ export const SettingsView: React.FC<Props> = ({ onDataChanged, showToast }) => {
   return (
     <div>
       <div className="responsive-grid-2">
-        {/* Columna 1: Respaldo JSON y Operaciones */}
+        {/* Columna 1: Actualizaciones y Respaldo */}
         <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: '0.8px', margin: '0 0 8px 4px' }}>
+            ACTUALIZACIONES DE LA APLICACIÓN
+          </div>
+          <div className="card" style={{ marginBottom: 14 }}>
+            <p style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: '18px', margin: '0 0 10px 0' }}>
+              Versión actual: <strong>OrquiML v4 (Fotos HD & Zoom)</strong>. Si se realizaron cambios recientes en el código, puedes forzar la descarga de la última versión aquí:
+            </p>
+            <button
+              onClick={handleCheckUpdates}
+              disabled={loading}
+              className="btn-primary"
+              style={{ width: '100%', padding: '10px 14px', fontSize: 13, borderRadius: 10 }}
+            >
+              <RefreshCw size={16} />
+              <span>{loading ? 'Actualizando...' : 'Comprobar y Forzar Actualización'}</span>
+            </button>
+          </div>
+
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: '0.8px', margin: '0 0 8px 4px' }}>
             RESPALDO Y BASE DE DATOS LOCAL
           </div>

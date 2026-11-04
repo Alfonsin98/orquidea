@@ -43,11 +43,36 @@
     <div id="root"></div>
     <script type="module" src="./src/main.tsx"></script>
     <script>
-      // Registrar el Service Worker offline con ruta relativa para soportar GitHub Pages
+      // Registrar el Service Worker offline con verificación activa de actualizaciones
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js', { scope: './' }).catch((err) => {
-            console.log('Error registrando ServiceWorker:', err);
+          navigator.serviceWorker.register('./sw.js', { scope: './' })
+            .then((registration) => {
+              // Buscar actualizaciones cada vez que se abre la app
+              registration.update();
+
+              registration.addEventListener('updatefound', () => {
+                const installingWorker = registration.installing;
+                if (installingWorker) {
+                  installingWorker.addEventListener('statechange', () => {
+                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                      window.dispatchEvent(new CustomEvent('orquiml-update-ready'));
+                    }
+                  });
+                }
+              });
+            })
+            .catch((err) => {
+              console.log('Error registrando ServiceWorker:', err);
+            });
+
+          // Cuando un nuevo Service Worker tome el control, recargar suavemente
+          let refreshing = false;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+              refreshing = true;
+              window.location.reload();
+            }
           });
         });
       }
